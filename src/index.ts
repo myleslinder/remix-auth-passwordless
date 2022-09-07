@@ -324,5 +324,6 @@ class PasswordlessStrategy<User> extends Strategy<
   }
 }
 
-export * from "./types";
+export type SendEmail<U> = PasswordlessStrategyOptions<U>["sendEmail"];
+export type { ValidateEmailFunction } from "./types";
 export { PasswordlessStrategy };
