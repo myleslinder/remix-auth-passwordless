@@ -14,6 +14,7 @@ import {
 import { generateOtp } from "./otp";
 import type {
   AuthErrorTypeMessages,
+  CodeOptions,
   LinkPayload,
   PasswordlessStrategyOptions,
   PasswordlessStrategyVerifyParams,
@@ -29,6 +30,7 @@ class PasswordlessStrategy<User> extends Strategy<
     PasswordlessStrategyOptions<User>
   > & {
     errorMessages: Required<AuthErrorTypeMessages>;
+    codeOptions: Required<CodeOptions>;
   };
 
   constructor(
@@ -166,11 +168,13 @@ class PasswordlessStrategy<User> extends Strategy<
       request.headers.get("Cookie")
     );
     this._session = session;
-
+    console.log({ session });
     const accessLink = session.get(this.internalOptions.sessionLinkKey) ?? "";
+    console.log({ accessLink });
+
     const { email, form } = await this.validateaccessLink(
       request.url,
-      decrypt(accessLink, this.internalOptions.secret)
+      accessLink
     );
     const user = await this.verify({ email, form });
     return this.success(user, request, sessionStorage, options);
@@ -255,7 +259,7 @@ class PasswordlessStrategy<User> extends Strategy<
     session.set(this.internalOptions.sessionEmailKey, email);
     session.set(this.internalOptions.sessionLinkKey, accessLink);
 
-    return this.onSuccess(session, sessionStorage, options, user);
+    return this.onSuccess(session, sessionStorage, options);
   }
 
   private validateCode(session: Session, code: string) {
@@ -309,11 +313,11 @@ class PasswordlessStrategy<User> extends Strategy<
         )
       : null;
 
-    const { email, form } = this.parseLinkPayload(linkCode, "link");
-
     if (linkCode !== sessionLinkCode) {
+      console.log({ linkCode, sessionLinkCode });
       throw new Error(this.internalOptions.errorMessages.link.mismatch);
     }
+    const { email, form } = this.parseLinkPayload(linkCode, "link");
 
     const formData = buildFormData(form);
     return { email, form: formData };
