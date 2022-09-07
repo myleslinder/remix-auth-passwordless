@@ -1,87 +1,48 @@
 import type { Session, SessionStorage } from "@remix-run/server-runtime";
 import { json, redirect } from "@remix-run/server-runtime";
-import {
-  AuthorizationError,
-  Strategy,
-  type AuthenticateOptions,
-  type Authenticator,
-  type StrategyVerifyCallback,
-} from "remix-auth";
-
-import { generateOtp } from "./otp";
-import type {
-  AuthTypeErrors,
-  EmailLinkStrategyOptions,
-  EmailLinkStrategyVerifyParams,
-  MagicLinkPayload,
-} from "./types";
+import type { AuthenticateOptions, StrategyVerifyCallback } from "remix-auth";
+import { AuthorizationError, Strategy } from "remix-auth";
 import {
   buildFormData,
-  createMagicLinkPayload,
+  createLinkPayload,
   decrypt,
   encrypt,
+  getaccessLinkCode,
   getDomainURL,
-  getMagicLinkCode,
-  mergeErrorMessages,
-  verifyEmailAddress,
-} from "./utils";
-
-const FIVE_MINUTES_MS = 1000 * 60 * 5;
+  mergeOptions,
+} from "./helpers";
+import { generateOtp } from "./otp";
+import type {
+  AuthErrorTypeMessages,
+  LinkPayload,
+  PasswordlessStrategyOptions,
+  PasswordlessStrategyVerifyParams,
+} from "./types";
 
 class EmailLinkStrategy<User> extends Strategy<
   User,
-  EmailLinkStrategyVerifyParams
+  PasswordlessStrategyVerifyParams
 > {
-  public name = "email-link";
-
-  private readonly internalOptions: Required<EmailLinkStrategyOptions<User>> & {
-    errorMessages: Required<AuthTypeErrors>;
+  public name = "passwordless";
+  private _session?: Session;
+  private readonly internalOptions: Required<
+    PasswordlessStrategyOptions<User>
+  > & {
+    errorMessages: Required<AuthErrorTypeMessages>;
   };
 
-  private _session?: Session;
-
   constructor(
-    options: EmailLinkStrategyOptions<User>,
-    verify: StrategyVerifyCallback<User, EmailLinkStrategyVerifyParams>
+    options: PasswordlessStrategyOptions<User>,
+    verify: StrategyVerifyCallback<User, PasswordlessStrategyVerifyParams>
   ) {
     super(verify);
-    const shouldUseCode = options.useOneTimeCode;
-    const internalCodeOptions = shouldUseCode
-      ? {
-          sessionCodeKey: options.sessionCodeKey ?? "auth:code",
-          codeField: options.codeField ?? "code",
-          useOneTimeCode: true as const,
-          codeOptions: options.codeOptions ?? {},
-          sendEmail: shouldUseCode ? options.sendEmail : options.sendEmail,
-        }
-      : {
-          sessionCodeKey: "auth:code",
-          codeField: "code",
-          useOneTimeCode: false as const,
-          codeOptions: {},
-          sendEmail: shouldUseCode ? options.sendEmail : options.sendEmail,
-        };
-    this.internalOptions = {
-      callbackURL: options.callbackURL ?? "/magic",
-      secret: options.secret,
-      sessionMagicLinkKey: options.sessionMagicLinkKey ?? "auth:magiclink",
-      sessionEmailKey: options.sessionEmailKey ?? "auth:email",
-      commitOnReturn: options.commitOnReturn ?? false,
-      verifyEmailAddress: options.verifyEmailAddress ?? verifyEmailAddress,
-      emailField: options.emailField ?? "email",
-      magicLinkSearchParam: options.magicLinkSearchParam ?? "token",
-      linkExpirationTime: options.linkExpirationTime ?? FIVE_MINUTES_MS,
-      errorMessages: mergeErrorMessages(options.errorMessages),
-      ...internalCodeOptions,
-    };
+    this.internalOptions = mergeOptions(options);
   }
 
   public async authenticate(
     request: Request,
     sessionStorage: SessionStorage,
-    options: AuthenticateOptions & {
-      sessionErrorKey: Authenticator["sessionErrorKey"];
-    }
+    options: AuthenticateOptions
   ): Promise<User> {
     try {
       if (request.method === "GET") {
@@ -104,22 +65,17 @@ class EmailLinkStrategy<User> extends Strategy<
     }
   }
 
-  public async getMagicLink(
-    emailAddress: string,
+  public async getaccessLink(
+    email: string,
     domainUrl: string,
     form: FormData
   ): Promise<string> {
-    const payload = createMagicLinkPayload(emailAddress, form);
-    const stringToEncrypt = JSON.stringify(payload);
-    const encryptedString = encrypt(
-      stringToEncrypt,
-      this.internalOptions.secret
-    );
+    const payload = createLinkPayload(email, form);
     const url = new URL(domainUrl);
-    url.pathname = this.internalOptions.callbackURL;
+    url.pathname = this.internalOptions.callbackPath;
     url.searchParams.set(
-      this.internalOptions.magicLinkSearchParam,
-      encryptedString
+      this.internalOptions.linkTokenParam,
+      encrypt(JSON.stringify(payload), this.internalOptions.secret)
     );
     return url.toString();
   }
@@ -193,7 +149,7 @@ class EmailLinkStrategy<User> extends Strategy<
   }
 
   private cleanSession(session: Session) {
-    session.unset(this.internalOptions.sessionMagicLinkKey);
+    session.unset(this.internalOptions.sessionLinkKey);
     session.unset(this.internalOptions.sessionEmailKey);
 
     if (this.internalOptions.useOneTimeCode) {
@@ -211,12 +167,10 @@ class EmailLinkStrategy<User> extends Strategy<
     );
     this._session = session;
 
-    const magicLink =
-      session.get(this.internalOptions.sessionMagicLinkKey) ?? "";
-    const decrypted = decrypt(magicLink, this.internalOptions.secret);
-    const { emailAddress: email, form } = await this.validateMagicLink(
+    const accessLink = session.get(this.internalOptions.sessionLinkKey) ?? "";
+    const { email, form } = await this.validateaccessLink(
       request.url,
-      decrypted
+      decrypt(accessLink, this.internalOptions.secret)
     );
     const user = await this.verify({ email, form });
     return this.success(user, request, sessionStorage, options);
@@ -235,11 +189,9 @@ class EmailLinkStrategy<User> extends Strategy<
     const submittedCode = this.internalOptions.useOneTimeCode
       ? formData.get(this.internalOptions.codeField)?.toString()
       : undefined;
-    const emailAddress = formData
-      .get(this.internalOptions.emailField)
-      ?.toString();
+    const email = formData.get(this.internalOptions.emailField)?.toString();
 
-    if (!emailAddress || typeof emailAddress !== "string") {
+    if (!email || typeof email !== "string") {
       throw await this.failure(
         "Missing email address.",
         request,
@@ -253,13 +205,13 @@ class EmailLinkStrategy<User> extends Strategy<
     if (isCodeCheck) {
       this.validateCode(session, submittedCode);
 
-      const sessionMagicLink =
-        session.get(this.internalOptions.sessionMagicLinkKey) ?? "";
+      const sessionaccessLink =
+        session.get(this.internalOptions.sessionLinkKey) ?? "";
 
-      const { emailAddress: email, form: formRecord } = this.parseLinkPayload(
-        getMagicLinkCode(
-          sessionMagicLink,
-          this.internalOptions.magicLinkSearchParam
+      const { email, form: formRecord } = this.parseLinkPayload(
+        getaccessLinkCode(
+          sessionaccessLink,
+          this.internalOptions.linkTokenParam
         ),
         "code"
       );
@@ -268,7 +220,7 @@ class EmailLinkStrategy<User> extends Strategy<
       return this.success(user, request, sessionStorage, options);
     }
 
-    await this.internalOptions.verifyEmailAddress(emailAddress);
+    await this.internalOptions.verifyEmail(email);
 
     let code: string | undefined;
     if (this.internalOptions.useOneTimeCode) {
@@ -279,28 +231,24 @@ class EmailLinkStrategy<User> extends Strategy<
       });
       session.set(this.internalOptions.sessionCodeKey, code);
     }
-    const magicLink = await this.getMagicLink(
-      emailAddress,
-      domainUrl,
-      formData
-    );
+    const accessLink = await this.getaccessLink(email, domainUrl, formData);
 
     const user = await this.verify({
-      email: emailAddress,
+      email: email,
       form: formData,
     });
 
     await this.internalOptions.sendEmail({
-      emailAddress,
-      magicLink,
+      email,
+      accessLink,
       user,
       code,
       domainUrl,
       form: formData,
     });
 
-    session.set(this.internalOptions.sessionEmailKey, emailAddress);
-    session.set(this.internalOptions.sessionMagicLinkKey, magicLink);
+    session.set(this.internalOptions.sessionEmailKey, email);
+    session.set(this.internalOptions.sessionLinkKey, accessLink);
 
     return this.onSuccess(session, sessionStorage, options, user);
   }
@@ -320,54 +268,50 @@ class EmailLinkStrategy<User> extends Strategy<
   }
 
   private parseLinkPayload(linkCode: string, type: "code" | "link") {
-    let magicLinkPayload: MagicLinkPayload;
+    let LinkPayload: LinkPayload;
     try {
       const decryptedString = decrypt(linkCode, this.internalOptions.secret);
-      magicLinkPayload = JSON.parse(decryptedString) as MagicLinkPayload;
+      LinkPayload = JSON.parse(decryptedString) as LinkPayload;
     } catch (error) {
       throw new Error(this.internalOptions.errorMessages.default);
     }
-    const { emailAddress, creationDate: linkCreationDateString } =
-      magicLinkPayload;
-    if (
-      typeof emailAddress !== "string" ||
-      typeof linkCreationDateString !== "string"
-    ) {
+    const { email, creationDate } = LinkPayload;
+    if (typeof email !== "string" || typeof creationDate !== "string") {
       throw new Error(this.internalOptions.errorMessages[type].invalid);
     }
-    const linkCreationDate = new Date(linkCreationDateString);
+    const linkCreationDate = new Date(creationDate);
     const expirationTime =
-      linkCreationDate.getTime() + this.internalOptions.linkExpirationTime;
+      linkCreationDate.getTime() + this.internalOptions.expirationTime;
 
     if (Date.now() > expirationTime) {
       throw new Error(this.internalOptions.errorMessages[type].expired);
     }
-    return magicLinkPayload;
+    return LinkPayload;
   }
 
-  private async validateMagicLink(
+  private async validateaccessLink(
     requestUrl: string,
-    sessionMagicLink?: string
+    sessionaccessLink?: string
   ) {
-    const linkCode = getMagicLinkCode(
+    const linkCode = getaccessLinkCode(
       requestUrl,
-      this.internalOptions.magicLinkSearchParam
+      this.internalOptions.linkTokenParam
     );
-    const sessionLinkCode = sessionMagicLink
-      ? getMagicLinkCode(
-          sessionMagicLink,
-          this.internalOptions.magicLinkSearchParam
+    const sessionLinkCode = sessionaccessLink
+      ? getaccessLinkCode(
+          sessionaccessLink,
+          this.internalOptions.linkTokenParam
         )
       : null;
 
-    const { emailAddress, form } = this.parseLinkPayload(linkCode, "link");
+    const { email, form } = this.parseLinkPayload(linkCode, "link");
 
     if (linkCode !== sessionLinkCode) {
       throw new Error(this.internalOptions.errorMessages.link.mismatch);
     }
 
     const formData = buildFormData(form);
-    return { emailAddress, form: formData };
+    return { email, form: formData };
   }
 }
 
