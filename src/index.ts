@@ -220,7 +220,12 @@ class EmailLinkStrategy<User> extends Strategy<
       return this.success(user, request, sessionStorage, options);
     }
 
-    await this.internalOptions.verifyEmail(email);
+    await this.internalOptions.validateEmail(email);
+    // await Promise.all([
+    //   this.internalOptions.verifierApiKey
+    //     ? emailVerifier(email, this.internalOptions.verifierApiKey)
+    //     : Promise.resolve(),
+    // ]);
 
     let code: string | undefined;
     if (this.internalOptions.useOneTimeCode) {

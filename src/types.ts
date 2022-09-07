@@ -46,7 +46,12 @@ type BaseStrategyOptions<User> = {
    *
    * By default it only test the email against the RegExp `/.+@.+/`.
    */
-  verifyEmail?: (email: string) => Promise<void>;
+  validateEmail?: (email: string) => Promise<void>;
+  /**
+   * If you want to use the https://verifier.meetchopra.com/ service
+   * provide your api key here
+   */
+  // verifierApiKey?: string;
   /**
    * The name of the form input used to get the email.
    * @default "email"
@@ -112,6 +117,13 @@ type CodeStrategyOptions = {
    * @default "auth:code"
    */
   sessionCodeKey?: string;
+  /**
+   * The amount of invalid code attempts
+   * before they have to generate a new one.
+   * This doesn't apply to expired code entry.
+   * @default 1
+   */
+  invalidCodeAttempts?: number;
   errorMessages?: Partial<AuthErrorTypeMessages>;
 };
 
@@ -123,8 +135,8 @@ type PasswordlessStrategyVerifyParams = {
   form: FormData;
 };
 
-type VerifyEmailFunction = NonNullable<
-  PasswordlessStrategyOptions<unknown>["verifyEmail"]
+type ValidateEmailFunction = NonNullable<
+  PasswordlessStrategyOptions<unknown>["validateEmail"]
 >;
 
 export type {
@@ -133,5 +145,5 @@ export type {
   PasswordlessStrategyOptions,
   AuthErrorTypeMessages,
   LinkPayload,
-  VerifyEmailFunction,
+  ValidateEmailFunction,
 };

@@ -1,7 +1,7 @@
 import type {
   AuthErrorTypeMessages,
   CodeOptions,
-  VerifyEmailFunction,
+  ValidateEmailFunction,
 } from "~/types";
 
 const FIVE_MINUTES_MS = 1000 * 60 * 5;
@@ -31,7 +31,7 @@ const DEFAULT_ERROR_MESSAGES: Required<AuthErrorTypeMessages> = {
   },
 };
 
-const verifyEmail: VerifyEmailFunction = async (email: string) => {
+const validateEmail: ValidateEmailFunction = async (email: string) => {
   if (!/.+@.+/u.test(email)) {
     throw new Error("A valid email is required.");
   }
@@ -40,7 +40,7 @@ const verifyEmail: VerifyEmailFunction = async (email: string) => {
 export const DEFAULTS = {
   expiry: FIVE_MINUTES_MS,
   codeOptions: DEFAULT_CODE_OPS,
-  verifyEmailFn: verifyEmail,
+  validateEmailFn: validateEmail,
   codeField: CODE_FIELD,
   emailField: EMAIL_FIELD,
   sessionCodeKey: SESSION_CODE_KEY,

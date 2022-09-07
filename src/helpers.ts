@@ -89,7 +89,7 @@ function mergeOptions<User>(
     sessionLinkKey: options.sessionLinkKey ?? DEFAULTS.sessionLinkKey,
     sessionEmailKey: options.sessionEmailKey ?? DEFAULTS.sessionEmailKey,
     commitOnReturn: options.commitOnReturn ?? false,
-    verifyEmail: options.verifyEmail ?? DEFAULTS.verifyEmailFn,
+    validateEmail: options.validateEmail ?? DEFAULTS.validateEmailFn,
     emailField: options.emailField ?? DEFAULTS.emailField,
     linkTokenParam: options.linkTokenParam ?? DEFAULTS.tokenParam,
     expirationTime: options.expirationTime ?? DEFAULTS.expiry,
@@ -105,6 +105,8 @@ function mergeOptions<User>(
       ? options.codeOptions ?? DEFAULTS.codeOptions
       : DEFAULTS.codeOptions,
     sendEmail: shouldUseCode ? options.sendEmail : options.sendEmail,
+    invalidCodeAttempts: 1,
+    // verifierApiKey: options.verifierApiKey ?? "",
   };
 }
 
