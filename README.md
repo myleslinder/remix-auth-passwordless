@@ -20,7 +20,7 @@ Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/)
 const authenticator = new Authenticator<YourUserType>(sessionStorage);
 
 authenticator.use(
-  new EmailLinkStrategy(
+  new PasswordlessStrategy(
     {
       // The bare minimum configuration
       sendEmail: sendPasswordlessEmail,

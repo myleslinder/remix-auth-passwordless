@@ -19,7 +19,7 @@ import type {
   PasswordlessStrategyVerifyParams,
 } from "./types";
 
-class EmailLinkStrategy<User> extends Strategy<
+class PasswordlessStrategy<User> extends Strategy<
   User,
   PasswordlessStrategyVerifyParams
 > {
@@ -321,4 +321,4 @@ class EmailLinkStrategy<User> extends Strategy<
 }
 
 export * from "./types";
-export { EmailLinkStrategy };
+export { PasswordlessStrategy };
