@@ -1,0 +1,16 @@
+{
+	"include": ["vite.config.ts", "test/**/*.ts"],
+	"exclude": ["src/**/*.ts", "src/**/*.tsx"],
+	"compilerOptions": {
+		"composite": true,
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"types": ["vite/client"],
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["./src/*"]
+		}
+	}
+}

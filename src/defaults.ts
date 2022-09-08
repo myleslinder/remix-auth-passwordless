@@ -1,8 +1,5 @@
-import type {
-	AuthErrorTypeMessages,
-	CodeOptions,
-	ValidateEmailFunction,
-} from "./types";
+import type { ValidateEmailFunction } from "~/index";
+import type { AuthErrorTypeMessages, CodeOptions } from "./types";
 
 const FIVE_MINUTES_MS = 1000 * 60 * 5;
 const DEFAULT_CODE_OPS: Required<CodeOptions> = {

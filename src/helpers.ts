@@ -4,31 +4,14 @@ import { DEFAULTS } from "./defaults";
 import type {
 	AuthErrorTypeMessages,
 	CodeOptions,
-	LinkPayload,
 	PasswordlessStrategyOptions,
 } from "./types";
 
-function buildFormData(form: Record<string, unknown>): FormData {
-	const formData = new FormData();
-	Object.keys(form).forEach((key) => {
-		if (Array.isArray(form[key])) {
-			(form[key] as unknown[]).forEach((value) => {
-				formData.append(key, value as string | Blob);
-			});
-		} else {
-			formData.append(key, form[key] as string | Blob);
-		}
-	});
-	return formData;
-}
-
-function getaccessLinkCode(link: string, param: string): string {
-	try {
-		const url = new URL(link);
-		return url.searchParams.get(param) ?? "";
-	} catch {
-		return "";
-	}
+function buildFormData(form: Record<string, string | Blob>): FormData {
+	return Object.entries(form).reduce((formData, [key, value]) => {
+		formData.append(key, value);
+		return formData;
+	}, new FormData());
 }
 
 function encrypt(value: string, secret: string): string {
@@ -40,23 +23,8 @@ function decrypt(value: string, secret: string): string {
 	return bytes.toString(enc.Utf8);
 }
 
-function createLinkPayload(email: string, form: FormData): LinkPayload {
-	return {
-		email,
-		form: Object.fromEntries(
-			[...form.keys()].map((key) => [
-				key,
-				form.getAll(key).length > 1
-					? form.getAll(key).toString()
-					: form.get(key)?.toString(),
-			]),
-		),
-		creationDate: new Date().toISOString(),
-	};
-}
-
 function mergeErrorMessages(
-	errorMessages?: Partial<AuthErrorTypeMessages>,
+	errorMessages?: Partial<AuthErrorTypeMessages>
 ): Required<AuthErrorTypeMessages> {
 	return {
 		default: errorMessages?.default ?? DEFAULTS.errorMessages.default,
@@ -78,7 +46,7 @@ function mergeErrorMessages(
 }
 
 function mergeOptions<User>(
-	options: PasswordlessStrategyOptions<User>,
+	options: PasswordlessStrategyOptions<User>
 ): Required<PasswordlessStrategyOptions<User>> & {
 	errorMessages: Required<AuthErrorTypeMessages>;
 	codeOptions: Required<CodeOptions>;
@@ -137,9 +105,7 @@ export {
 	getDomainURL,
 	mergeErrorMessages,
 	buildFormData,
-	getaccessLinkCode,
 	encrypt,
 	decrypt,
-	createLinkPayload,
 	mergeOptions,
 };
