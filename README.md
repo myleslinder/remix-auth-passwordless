@@ -81,9 +81,7 @@ The default expiry is set to 5 minutes and there is no options to disable the sa
 
 ### One Time Code Generation
 
-This strategy uses v3 of [`nanoid`](https://github.com/ai/nanoid/) (as opposed to the latest: v4) because to use v4 you would have to manually include so you don't have to add it to your server deps to bundle.
-
-- TODO: actually is this true if im bundling?
+This strategy uses [`nanoid`](https://github.com/ai/nanoid/) to generate the one time codes.
 
 The generated code is split into segments separated by a `-`, like so: `abc1-2def-x3yz`. In the options you can customize the code length, segment length, and if you want to use only lowercase letters. The shortest one time code that is supported is 4 characters.
 
@@ -102,7 +100,7 @@ Alternatively, **if you don't use cookie session storage** you can use the `comm
 All the default options are visible in `/src/defaults.ts`.
 
 ```ts
-type BaseStrategyOptions<User> = {
+type PasswordlessStrategyOptions<User> = {
   /**
    * A secret string used to encrypt and decrypt the token and magic link.
    */
@@ -196,12 +194,12 @@ The following error types exist for both code and link access types, except wher
 
 - expired
   - Thrown when the magic link has expired.
-  - Default - "Magic link expired. Please request a new one."
+  - Default - "Access link expired. Please request a new one."
 - invalid
   - Thrown when there is an error decrypting the the magic link code, the email address in the payload is not a string, or the link creation date cannot be determined.
-  - Default - "Sign in link invalid. Please request a new one."
+  - Default - "Access link invalid. Please request a new one."
 - mismatch (link only)
-  - Only relevant if you provide true for `validateSessionMagicLink`. This error is thrown if the magic link is valid but it does not match with the existing link in the session (or the existing session has no magic link).
+  - This error is thrown if the magic link is valid but it does not match with the existing link in the session (or the existing session has no magic link).
   - Default - "You must open the magic link on the same device it was created from for security reasons. Please request a new link."
 - default
   - The default error message when something unknown goes wrong. This is most likely to be used if the token included in the access link is malformed causing a JSON parse error.
