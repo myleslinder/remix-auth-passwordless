@@ -2,7 +2,8 @@
 
 > This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-magic-links).
 
-> You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
+> > **Warning**
+> > You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
 
 Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/). You can use this strategy for email based passwordless authentication with a magic link and optionally a one time access code. It doesn't currently support SMS or sending only one time codes.
 
@@ -20,18 +21,18 @@ Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/)
 const authenticator = new Authenticator<YourUserType>(sessionStorage);
 
 authenticator.use(
-  new PasswordlessStrategy(
-    {
-      // The bare minimum configuration
-      sendEmail: sendPasswordlessEmail,
-      secret: passwordlessLinkSecret,
-      // Whether to use one time code in addition to access link
-      useOneTimeCode: true,
-    },
-    async ({ email }) => {
-      return getUserSessionByEmail(email);
-    }
-  )
+	new PasswordlessStrategy(
+		{
+			// The bare minimum configuration
+			sendEmail: sendPasswordlessEmail,
+			secret: passwordlessLinkSecret,
+			// Whether to use one time code in addition to access link
+			useOneTimeCode: true,
+		},
+		async ({ email }) => {
+			return getUserSessionByEmail(email);
+		}
+	)
 );
 ```
 
@@ -47,9 +48,9 @@ If you provide nothing, the default function used is:
 
 ```ts
 async (email: string) => {
-  if (!/.+@.+/u.test(email)) {
-    throw new Error("A valid email is required.");
-  }
+	if (!/.+@.+/u.test(email)) {
+		throw new Error("A valid email is required.");
+	}
 };
 ```
 
@@ -101,90 +102,90 @@ All the default options are visible in `/src/defaults.ts`.
 
 ```ts
 type PasswordlessStrategyOptions<User> = {
-  /**
-   * A secret string used to encrypt and decrypt the token and magic link.
-   */
-  secret: string;
-  /**
-   * The function called to send the email
-   */
-  sendEmail: (options: SendEmailOptions<User>) => Promise<void>;
-  /**
-   * The endpoint path the user will go after clicking on the email link.
-   * @default "/auth"
-   */
-  callbackPath?: string;
-  /**
-   * A function to validate the email address. The message of
-   * an error thrown from within this function will be flashed to
-   * the session error key
-   *
-   * By default it only test the email against the RegExp `/.+@.+/`.
-   */
-  verifyEmail?: (email: string) => Promise<void>;
-  /**
-   * The name of the form input used to get the email.
-   * @default "email"
-   */
-  emailField?: string;
-  /**
-   * The key on the session to store the email.
-   * @default "auth:email"
-   */
-  sessionEmailKey?: string;
-  /**
-   * The param name the strategy will use to read the token from the email link.
-   * @default "token"
-   */
-  linkTokenParam?: string;
-  /**
-   * The key on the session to store the magic link.
-   * @default "auth:accessLink"
-   */
-  sessionLinkKey?: string;
-  /**
-   * How long the link and code will be valid. Default to 5 minutes.
-   * @default 30_000
-   */
-  expirationTime?: number;
-  /**
-   * Should the session be commited before returning
-   * the user data if the `successRedirect` is omitted.
-   * @default false
-   */
-  commitOnReturn?: boolean;
-  /**
-   * Enables sending and accepting a one time code
-   * @default false
-   */
-  useOneTimeCode?: boolean;
-  /**
-   * Configuration for the generated one time code
-   * @default size=12,segmentLength=4,lettersOnly=false
-   */
-  codeOptions?: {
-    size?: number;
-    segmentLength?: number;
-    lettersOnly?: boolean;
-  };
-  /**
-   * The name of the form input used to get the code.
-   * @default "code"
-   */
-  codeField?: string;
-  /**
-   * The key on the session to store the code.
-   * @default "auth:code"
-   */
-  sessionCodeKey?: string;
-  /**
-   * The amount of invalid code attempts
-   * before they have to generate a new one.
-   * This doesn't apply to expired code entry.
-   * @default 1
-   */
-  invalidCodeAttempts?: number;
-  errorMessages?: Partial<AuthErrorTypeMessages>;
+	/**
+	 * A secret string used to encrypt and decrypt the token and magic link.
+	 */
+	secret: string;
+	/**
+	 * The function called to send the email
+	 */
+	sendEmail: (options: SendEmailOptions<User>) => Promise<void>;
+	/**
+	 * The endpoint path the user will go after clicking on the email link.
+	 * @default "/auth"
+	 */
+	callbackPath?: string;
+	/**
+	 * A function to validate the email address. The message of
+	 * an error thrown from within this function will be flashed to
+	 * the session error key
+	 *
+	 * By default it only test the email against the RegExp `/.+@.+/`.
+	 */
+	verifyEmail?: (email: string) => Promise<void>;
+	/**
+	 * The name of the form input used to get the email.
+	 * @default "email"
+	 */
+	emailField?: string;
+	/**
+	 * The key on the session to store the email.
+	 * @default "auth:email"
+	 */
+	sessionEmailKey?: string;
+	/**
+	 * The param name the strategy will use to read the token from the email link.
+	 * @default "token"
+	 */
+	linkTokenParam?: string;
+	/**
+	 * The key on the session to store the magic link.
+	 * @default "auth:accessLink"
+	 */
+	sessionLinkKey?: string;
+	/**
+	 * How long the link and code will be valid. Default to 5 minutes.
+	 * @default 30_000
+	 */
+	expirationTime?: number;
+	/**
+	 * Should the session be commited before returning
+	 * the user data if the `successRedirect` is omitted.
+	 * @default false
+	 */
+	commitOnReturn?: boolean;
+	/**
+	 * Enables sending and accepting a one time code
+	 * @default false
+	 */
+	useOneTimeCode?: boolean;
+	/**
+	 * Configuration for the generated one time code
+	 * @default size=12,segmentLength=4,lettersOnly=false
+	 */
+	codeOptions?: {
+		size?: number;
+		segmentLength?: number;
+		lettersOnly?: boolean;
+	};
+	/**
+	 * The name of the form input used to get the code.
+	 * @default "code"
+	 */
+	codeField?: string;
+	/**
+	 * The key on the session to store the code.
+	 * @default "auth:code"
+	 */
+	sessionCodeKey?: string;
+	/**
+	 * The amount of invalid code attempts
+	 * before they have to generate a new one.
+	 * This doesn't apply to expired code entry.
+	 * @default 1
+	 */
+	invalidCodeAttempts?: number;
+	errorMessages?: Partial<AuthErrorTypeMessages>;
 };
 ```
 
