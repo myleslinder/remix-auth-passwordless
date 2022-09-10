@@ -1,5 +1,5 @@
 import type { ValidateEmailFunction } from "~/index";
-import type { AuthErrorTypeMessages, CodeOptions } from "./types";
+import type { AuthErrorTypeMessages, CodeOptions } from "~/types";
 
 const FIVE_MINUTES_MS = 1000 * 60 * 5;
 const DEFAULT_CODE_OPS: Required<CodeOptions> = {
@@ -28,10 +28,11 @@ const DEFAULT_ERROR_MESSAGES: Required<AuthErrorTypeMessages> = {
 	},
 };
 
-const validateEmail: ValidateEmailFunction = async (email: string) => {
+const validateEmail: ValidateEmailFunction = (email: string) => {
 	if (!/.+@.+/u.test(email)) {
 		throw new Error("A valid email is required.");
 	}
+	return Promise.resolve();
 };
 
 export const DEFAULTS = {

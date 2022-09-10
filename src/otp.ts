@@ -8,7 +8,7 @@ const generateOtp = async ({
 	size,
 	segmentLength,
 	lettersOnly,
-}: Required<CodeOptions>) => {
+}: Required<CodeOptions>): Promise<string> => {
 	if (size <= 4) {
 		throw new Error("The one time code length must be at least 4 characters");
 	}

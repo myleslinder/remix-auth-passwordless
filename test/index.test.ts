@@ -13,7 +13,7 @@ async function buildRequest(
 	params?: URLSearchParams,
 	method = "GET"
 ) {
-	const url = new URL(`/?${params?.toString()}`, "http://localhost:3000");
+	const url = new URL(`/?${params?.toString() ?? ""}`, "http://localhost:3000");
 	return new Request(url, {
 		method,
 		headers: { Cookie: await sessionStorage.commitSession(session) },
@@ -191,7 +191,9 @@ describe(PasswordlessStrategy.name, () => {
 			expect(headers.get("Location")).toBe("/entry");
 			expect(session.get("auth:accessLink")).toBeDefined();
 			expect(session.get("auth:code")).toBeDefined();
-			code = session.get("auth:code");
+			const _code: unknown = session.get("auth:code");
+			assert(typeof _code === "string");
+			code = _code;
 			expect(session.get("user")).not.toBeDefined();
 		}
 		expect(sendEmail).toHaveBeenCalledOnce();
@@ -201,7 +203,7 @@ describe(PasswordlessStrategy.name, () => {
 			email: user.email,
 			code,
 		});
-		const accessLink = await strategy.buildAccessLink(
+		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
 			new FormData()
@@ -255,7 +257,7 @@ describe(PasswordlessStrategy.name, () => {
 			verify
 		);
 
-		const accessLink = await strategy.buildAccessLink(
+		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
 			new FormData()
@@ -277,9 +279,9 @@ describe(PasswordlessStrategy.name, () => {
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
-			const headers = redirect.headers as Headers;
+			const headers = redirect.headers;
 			const session = await sessionStorage.getSession(
-				(redirect.headers as Headers).get("Set-Cookie")
+				redirect.headers.get("Set-Cookie")
 			);
 			expect(headers.get("Location")).toBe("/entry");
 			expect(headers.get("Set-Cookie")).not.toBeNull();
@@ -307,7 +309,7 @@ describe(PasswordlessStrategy.name, () => {
 			verify
 		);
 
-		const accessLink = await strategy.buildAccessLink(
+		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
 			new FormData()
@@ -329,8 +331,10 @@ describe(PasswordlessStrategy.name, () => {
 			const session = await sessionStorage.getSession(
 				headers.get("Set-Cookie")
 			);
-			console.log(session.data);
-			expect(session.get("errorKey")?.message).to.equal(defaultErr);
+			const error = session.get("errorKey") as { message: string };
+			assert(typeof error === "object" && error !== null && "message" in error);
+			assert("message" in error);
+			expect(error.message).to.equal(defaultErr);
 		}
 		try {
 			const newR = await buildRequest(session);
@@ -341,7 +345,9 @@ describe(PasswordlessStrategy.name, () => {
 			});
 		} catch (response) {
 			assert(response instanceof Response);
-			const json = await response.json();
+			const json: { message: string } = (await response.json()) as {
+				message: string;
+			};
 			expect(json.message).to.equal(defaultErr);
 		}
 	});
@@ -352,7 +358,7 @@ describe(PasswordlessStrategy.name, () => {
 		session.set(authenticator.sessionKey, user);
 
 		const request = await buildRequest(session);
-		const strategy = new PasswordlessStrategy(
+		const strategy = new PasswordlessStrategy<User>(
 			{
 				secret: "somescsc",
 				sendEmail: vi.fn(),
@@ -365,7 +371,7 @@ describe(PasswordlessStrategy.name, () => {
 			sessionErrorKey: "errorKey",
 		});
 
-		expect(verifiedUser).resolves.toEqual(user);
+		await expect(verifiedUser).resolves.toEqual(user);
 	});
 });
 

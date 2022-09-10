@@ -42,6 +42,7 @@
 		"nanoid": "^4.0.0"
 	},
 	"devDependencies": {
+		"@myleslinder/eslint-config": "^0.0.31",
 		"@remix-run/node": "^1.7.0",
 		"@remix-run/react": "^1.7.0",
 		"@remix-run/server-runtime": "*",

@@ -65,11 +65,11 @@ class PasswordlessStrategy<User> extends Strategy<
 		}
 	}
 
-	public async buildAccessLink(
+	public buildAccessLink(
 		email: string,
 		domainUrl: string,
 		form: FormData
-	): Promise<string> {
+	): string {
 		const payload = {
 			email,
 			form: Object.fromEntries(form.entries()),
@@ -169,12 +169,13 @@ class PasswordlessStrategy<User> extends Strategy<
 			request.headers.get("Cookie")
 		);
 		this._session = session;
-		const accessLink = session.get(this.internalOptions.sessionLinkKey) ?? "";
-
-		const { email, form } = await this.validateaccessLink(
-			request.url,
-			accessLink
+		const sessionLink: unknown = session.get(
+			this.internalOptions.sessionLinkKey
 		);
+		const accessLink: string =
+			typeof sessionLink === "string" ? sessionLink : "";
+
+		const { email, form } = this.validateaccessLink(request.url, accessLink);
 		const user = await this.verify({ email, form });
 		return this.success(user, request, sessionStorage, options);
 	}
@@ -210,8 +211,11 @@ class PasswordlessStrategy<User> extends Strategy<
 		if (isCodeCheck) {
 			this.validateCode(session, submittedCode);
 
-			const sessionaccessLink =
-				session.get(this.internalOptions.sessionLinkKey) ?? "";
+			const sessionLink: unknown = session.get(
+				this.internalOptions.sessionLinkKey
+			);
+			const sessionaccessLink: string =
+				typeof sessionLink === "string" ? sessionLink : "";
 
 			const linkCode = new URL(sessionaccessLink).searchParams
 				.get(this.internalOptions.linkTokenParam)
@@ -244,10 +248,10 @@ class PasswordlessStrategy<User> extends Strategy<
 			});
 			session.set(this.internalOptions.sessionCodeKey, code);
 		}
-		const accessLink = await this.buildAccessLink(email, domainUrl, formData);
+		const accessLink = this.buildAccessLink(email, domainUrl, formData);
 
 		const user = await this.verify({
-			email: email,
+			email,
 			form: formData,
 		});
 
@@ -268,7 +272,11 @@ class PasswordlessStrategy<User> extends Strategy<
 
 	private validateCode(session: Session, code: string) {
 		if (this.internalOptions.useOneTimeCode) {
-			const sessionCode = session.get(this.internalOptions.sessionCodeKey);
+			const sessionCodeVal: unknown = session.get(
+				this.internalOptions.sessionCodeKey
+			);
+			const sessionCode =
+				typeof sessionCodeVal === "string" ? sessionCodeVal : "";
 
 			if (code !== sessionCode) {
 				throw new Error(this.internalOptions.errorMessages.code.invalid);
@@ -290,7 +298,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		}
 		const { email, creationDate } = linkPayload;
 		if (typeof email !== "string" || typeof creationDate !== "string") {
-			throw new Error(this.internalOptions.errorMessages[type].invalid);
+			throw new TypeError(this.internalOptions.errorMessages[type].invalid);
 		}
 		const linkCreationDate = new Date(creationDate);
 		const expirationTime =
@@ -302,10 +310,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		return linkPayload;
 	}
 
-	private async validateaccessLink(
-		requestUrl: string,
-		sessionaccessLink?: string
-	) {
+	private validateaccessLink(requestUrl: string, sessionaccessLink?: string) {
 		const linkCode = new URL(requestUrl).searchParams
 			.get(this.internalOptions.linkTokenParam)
 			?.toString();
