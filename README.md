@@ -1,4 +1,4 @@
-# Remix Auth Passwordless Strategy
+# Remix Auth Passwordless Strategy &nbsp;![](https://img.shields.io/npm/v/remix-auth-passwordless.svg)
 
 > This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-magic-links).
 
