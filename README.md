@@ -1,9 +1,9 @@
 # Remix Auth Passwordless Strategy &nbsp;![](https://img.shields.io/npm/v/remix-auth-passwordless.svg)
 
 > This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-magic-links).
+
 > **Warning**
->
-> > You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
+> You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
 
 Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/). You can use this strategy for email based passwordless authentication with a magic link and optionally a one time access code. It doesn't currently support SMS or sending only one time codes.
 
