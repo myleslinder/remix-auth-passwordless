@@ -1,11 +1,13 @@
 # Remix Auth Passwordless Strategy &nbsp;![](https://img.shields.io/npm/v/remix-auth-passwordless.svg)
 
-> This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-magic-links).
+> This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-access-links).
 
 > **Warning**
 > You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
 
-Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/). You can use this strategy for email based passwordless authentication with a magic link and optionally a one time access code. It doesn't currently support SMS or sending only one time codes.
+Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/). You can use this strategy for email based passwordless authentication with a access link and optionally a one time access code.
+
+It doesn't currently support SMS or sending one time codes without an access link.
 
 ## Supported runtimes
 
@@ -38,7 +40,9 @@ authenticator.use(
 
 ### Verify Callback
 
-Your verify function should always try to find and return your full user - or a discriminated shim user if you want to use this flow for sign up as well. When you kick off the access flow by making a post request to `authenticate` without a `codeField` in the form data on the request your `verify` function will be called but the returned value will not be set in the session. It will however be passed to the provided send email function so you have access to whatever info you need to determine if this is a new or returning user, etc.
+Your verify function should always try to find and return whatever your full user is you want to store in the session (or a shim user if you want to use this flow for sign up as well).
+
+When you kick off the access flow by making a post request to `authenticate` without a `codeField` in the form data your `verify` function will be called but the returned value will not be set in the session. It will, however, be passed to the provided send email function so you have access to whatever info you need to determine if this is a new or returning user, etc.
 
 ### Email Validation
 
@@ -47,7 +51,7 @@ If you have an allowlist or only support work emails or something like that this
 If you provide nothing, the default function used is:
 
 ```ts
-async (email: string) => {
+(email: string) => {
 	if (!/.+@.+/u.test(email)) {
 		throw new Error("A valid email is required.");
 	}
@@ -84,7 +88,7 @@ The default expiry is set to 5 minutes and there is no options to disable the sa
 
 This strategy uses [`nanoid`](https://github.com/ai/nanoid/) to generate the one time codes.
 
-The generated code is split into segments separated by a `-`, like so: `abc1-2def-x3yz`. In the options you can customize the code length, segment length, and if you want to use only lowercase letters. The shortest one time code that is supported is 4 characters.
+The generated code is split into segments separated by a `-`, like so: `abc1-2def-x3yz`. In the options you can customize the code length, segment length, and if you want to use only lowercase letters (no numbers). The shortest one time code that is supported is 4 characters.
 
 By default if the user enters an invalid code then they will have to resend another code, however you can modify this by changing the `invalidCodeAttempts` option.
 
@@ -103,7 +107,7 @@ All the default options are visible in `/src/defaults.ts`.
 ```ts
 type PasswordlessStrategyOptions<User> = {
 	/**
-	 * A secret string used to encrypt and decrypt the token and magic link.
+	 * A secret string used to encrypt and decrypt the token and access link.
 	 */
 	secret: string;
 	/**
@@ -139,7 +143,7 @@ type PasswordlessStrategyOptions<User> = {
 	 */
 	linkTokenParam?: string;
 	/**
-	 * The key on the session to store the magic link.
+	 * The key on the session to store the access link.
 	 * @default "auth:accessLink"
 	 */
 	sessionLinkKey?: string;
@@ -194,18 +198,40 @@ type PasswordlessStrategyOptions<User> = {
 The following error types exist for both code and link access types, except where noted:
 
 - expired
-  - Thrown when the magic link has expired.
+  - Thrown when the access link/code has expired.
   - Default - "Access link expired. Please request a new one."
 - invalid
-  - Thrown when there is an error decrypting the the magic link code, the email address in the payload is not a string, or the link creation date cannot be determined.
+  - Thrown when there is an error decrypting the the access link code, the email address in the payload is not a string, or the link creation date cannot be determined.
   - Default - "Access link invalid. Please request a new one."
 - mismatch (link only)
-  - This error is thrown if the magic link is valid but it does not match with the existing link in the session (or the existing session has no magic link).
-  - Default - "You must open the magic link on the same device it was created from for security reasons. Please request a new link."
+  - This error is thrown if the access link is valid but it does not match with the existing link in the session (or the existing session has no access link).
+  - Default - "You're trying to log into a browser that was not used to initiate the login"
 - default
   - The default error message when something unknown goes wrong. This is most likely to be used if the token included in the access link is malformed causing a JSON parse error.
+  - Default - "Something went wrong. Please try again."
 
 You can override any of these messages by setting the relevant key in the `errorMessages` option.
+
+### Passing pre-read FormData
+
+The final argument to `authenticate` is an options object accepting values for "successRedirect", "failureRedirect","throwOnError", and "context". Context is technicaly of type `AppLoadContext` which is the `context` value your data functions (loaders and actions) receive. However, since the `AppLoadContext` type is basically just a regular object remix-auth strategies can it to take in additional values.
+
+This strategy allows you to set a `formData` key on the context object to a FormData object that it will read from instead of calling `request.formData()`. Normally, if you call `request.formData()` before calling `authenticate` it will throw an error as the body of the request has already been read. Passing FormData in the context allows you to read the FormData from the request and avoid having to clone the request to do so.
+
+> If you just need the email off the form you can access it off the session instead via the `sessionEmailKey`.
+
+```ts
+export const action: ActionFunction = async ({ request }) => {
+	const formData = await request.formData();
+	// use formData here
+	return await authenticator.authenticate("form", request, {
+		// or here
+		successRedirect: formData.get("redirectTo") ?? "/fallbackSuccess",
+		failureRedirect: "/login",
+		context: { formData }, // pass pre-read formData here
+	});
+};
+```
 
 ## License
 

@@ -18,9 +18,9 @@ const TOKEN_PARAM = "token";
 const DEFAULT_ERROR_MESSAGES: Required<AuthErrorTypeMessages> = {
 	default: "Something went wrong. Please try again.",
 	link: {
-		expired: "Magic link expired. Please request a new one.",
-		invalid: "Sign in link invalid. Please request a new one.",
-		mismatch: `You must open the magic link on the same device it was created from for security reasons. Please request a new link.`,
+		expired: "Access link expired. Please request a new one.",
+		invalid: "Access link invalid. Please request a new one.",
+		mismatch: `You're trying to log into a browser that was not used to initiate the login`,
 	},
 	code: {
 		expired: "Code has expired. Please request a new one.",

@@ -91,6 +91,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		options: AuthenticateOptions,
 	): Promise<User> {
 		let session = this._session;
+
 		if (!session) {
 			session = await sessionStorage.getSession(request.headers.get("Cookie"));
 		}
@@ -176,14 +177,14 @@ class PasswordlessStrategy<User> extends Strategy<
 		const session = await sessionStorage.getSession(
 			request.headers.get("Cookie"),
 		);
+
 		this._session = session;
 		const sessionLink: unknown = session.get(
 			this.internalOptions.sessionLinkKey,
 		);
 		const accessLink: string =
 			typeof sessionLink === "string" ? sessionLink : "";
-
-		const { email, form } = this.validateaccessLink(request.url, accessLink);
+		const { email, form } = this.validateAccessLink(request.url, accessLink);
 		const user = await this.verify({ email, form });
 		return this.success(user, request, sessionStorage, options);
 	}
@@ -199,11 +200,15 @@ class PasswordlessStrategy<User> extends Strategy<
 		this._session = session;
 
 		const formData = await this.readFormData(request, options);
-
 		const submittedCode = this.internalOptions.useOneTimeCode
 			? formData.get(this.internalOptions.codeField)?.toString()
 			: undefined;
-		const email = formData.get(this.internalOptions.emailField)?.toString();
+
+		const isCodeCheck = this.internalOptions.useOneTimeCode && submittedCode;
+
+		const email = isCodeCheck
+			? session.get(this.internalOptions.sessionEmailKey)
+			: formData.get(this.internalOptions.emailField)?.toString();
 
 		if (!email || typeof email !== "string") {
 			throw await this.failure(
@@ -215,7 +220,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		}
 
 		const domainUrl = getDomainURL(request);
-		const isCodeCheck = this.internalOptions.useOneTimeCode && submittedCode;
+
 		if (isCodeCheck) {
 			this.validateCode(session, submittedCode);
 
@@ -318,15 +323,13 @@ class PasswordlessStrategy<User> extends Strategy<
 		return linkPayload;
 	}
 
-	private validateaccessLink(requestUrl: string, sessionaccessLink?: string) {
+	private validateAccessLink(requestUrl: string, sessionaccessLink?: string) {
 		const linkCode = new URL(requestUrl).searchParams
 			.get(this.internalOptions.linkTokenParam)
 			?.toString();
-
 		if (!linkCode) {
 			throw new Error(this.internalOptions.errorMessages.default);
 		}
-
 		const sessionLinkCode = sessionaccessLink
 			? new URL(sessionaccessLink).searchParams
 					.get(this.internalOptions.linkTokenParam)

@@ -1,6 +1,7 @@
 /// <reference types="@remix-run/node/globals" />
 import { createCookieSessionStorage, type Session } from "@remix-run/node";
 import { assert, beforeEach, describe, expect, test, vi } from "vitest";
+import { DEFAULTS } from "~/defaults";
 import { PasswordlessStrategy } from "../src/index";
 
 const sessionStorage = createCookieSessionStorage({
@@ -33,7 +34,7 @@ describe(PasswordlessStrategy.name, () => {
 
 	const user: User = {
 		id: 1,
-		token: "token",
+		token: DEFAULTS.tokenParam,
 		email: "test@example.com",
 		role: "admin",
 	};
@@ -75,13 +76,13 @@ describe(PasswordlessStrategy.name, () => {
 			assert(redirect instanceof Response);
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
-			const session = await sessionStorage.getSession(
+			const sessionRes = await sessionStorage.getSession(
 				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
-			expect(session.get("auth:accessLink")).toBeDefined();
-			expect(session.get("auth:code")).not.toBeDefined();
-			expect(session.get("user")).not.toBeDefined();
+			expect(sessionRes.get(DEFAULTS.sessionLinkKey)).toBeDefined();
+			expect(sessionRes.get(DEFAULTS.sessionCodeKey)).not.toBeDefined();
+			expect(sessionRes.get("user")).not.toBeDefined();
 		}
 		expect(verify).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -131,8 +132,8 @@ describe(PasswordlessStrategy.name, () => {
 				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
-			expect(session.get("auth:accessLink")).toBeDefined();
-			expect(session.get("auth:code")).toBeDefined();
+			expect(session.get(DEFAULTS.sessionLinkKey)).toBeDefined();
+			expect(session.get(DEFAULTS.sessionCodeKey)).toBeDefined();
 			expect(session.get("user")).not.toBeDefined();
 		}
 		expect(sendEmail).toHaveBeenCalledOnce();
@@ -182,30 +183,35 @@ describe(PasswordlessStrategy.name, () => {
 			assert(redirect instanceof Response);
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
-			const session = await sessionStorage.getSession(
+			const resSession = await sessionStorage.getSession(
 				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
-			expect(session.get("auth:accessLink")).toBeDefined();
-			expect(session.get("auth:code")).toBeDefined();
-			const _code: unknown = session.get("auth:code");
+			expect(resSession.get(DEFAULTS.sessionLinkKey)).toBeDefined();
+			expect(resSession.get(DEFAULTS.sessionCodeKey)).toBeDefined();
+			expect(resSession.get(DEFAULTS.sessionEmailKey)).toBe(user.email);
+			const _code: unknown = resSession.get(DEFAULTS.sessionCodeKey);
 			assert(typeof _code === "string");
 			code = _code;
-			expect(session.get("user")).not.toBeDefined();
+			expect(resSession.get("user")).not.toBeDefined();
 		}
 		expect(sendEmail).toHaveBeenCalledOnce();
 
-		session.set("auth:code", code);
+		session.set(DEFAULTS.sessionCodeKey, code);
+		session.set(DEFAULTS.sessionEmailKey, user.email);
 		const formData = new URLSearchParams({
-			email: user.email,
+			// email: user.email,
 			code,
 		});
+		const fd = new FormData();
+		fd.set("email", user.email);
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData(),
+			fd,
 		);
-		session.set("auth:accessLink", accessLink);
+
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
 		const url = new URL(`/`, "http://localhost:3000");
 		const request = new Request(url, {
 			method: "POST",
@@ -231,8 +237,8 @@ describe(PasswordlessStrategy.name, () => {
 				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/inside");
-			expect(session.get("auth:accessLink")).not.toBeDefined();
-			expect(session.get("auth:code")).not.toBeDefined();
+			expect(session.get(DEFAULTS.sessionLinkKey)).not.toBeDefined();
+			expect(session.get(DEFAULTS.sessionCodeKey)).not.toBeDefined();
 			expect(session.get("user")).toBeDefined();
 		}
 		expect(verify).toHaveBeenCalledWith(
@@ -250,21 +256,26 @@ describe(PasswordlessStrategy.name, () => {
 			{
 				secret: "somescsc",
 				sendEmail,
+				callbackPath: "/custom",
 			},
 			verify,
 		);
 
+		const formData = new FormData();
+		formData.set("email", "somescsc@gmail.com");
+
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData(),
+			formData,
 		);
+		expect(new URL(accessLink).pathname).toBe("/custom");
 
-		session.set("auth:accessLink", accessLink);
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
 		const request = await buildRequest(
 			session,
 			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get("token") ?? "",
+				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
 			}),
 		);
 
@@ -288,7 +299,7 @@ describe(PasswordlessStrategy.name, () => {
 		expect(verify).toHaveBeenCalledWith(
 			expect.objectContaining({
 				email: user.email,
-				form: new FormData(),
+				form: formData,
 			}),
 		);
 	});
@@ -306,13 +317,6 @@ describe(PasswordlessStrategy.name, () => {
 			verify,
 		);
 
-		const accessLink = strategy.buildAccessLink(
-			user.email,
-			"http://localhost:3000",
-			new FormData(),
-		);
-
-		session.set("auth:accessLink", accessLink);
 		const request = await buildRequest(session);
 
 		try {
@@ -367,14 +371,14 @@ describe(PasswordlessStrategy.name, () => {
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData(),
+			body,
 		);
 
-		session.set("auth:accessLink", accessLink);
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
 		const request = await buildRequest(
 			session,
 			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get("token") ?? "",
+				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
 			}),
 		);
 		try {
@@ -413,14 +417,14 @@ describe(PasswordlessStrategy.name, () => {
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData(),
+			body,
 		);
 
-		session.set("auth:accessLink", accessLink);
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
 		const request = await buildRequest(
 			session,
 			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get("token") ?? "",
+				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
 			}),
 		);
 		try {
@@ -452,18 +456,20 @@ describe(PasswordlessStrategy.name, () => {
 			},
 			verify,
 		);
+		const formData = new FormData();
+		formData.set("email", "somescsc@gmail.com");
 
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData(),
+			formData,
 		);
 
-		session.set("auth:accessLink", accessLink);
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
 		const request = await buildRequest(
 			session,
 			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get("token") ?? "",
+				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
 			}),
 		);
 
@@ -476,31 +482,121 @@ describe(PasswordlessStrategy.name, () => {
 		expect(verify).toHaveBeenCalledWith(
 			expect.objectContaining({
 				email: user.email,
-				form: new FormData(),
+				form: formData,
 			}),
 		);
 
-		await expect(verifiedUser).equals(user);
+		expect(verifiedUser).equals(user);
+	});
+	test("it should use the provided options over defaults", async () => {
+		verify.mockReturnValue(user);
+		const session = await sessionStorage.getSession();
+		const sendEmail = vi.fn();
+		const validateEmail = vi.fn();
+		const strategy = new PasswordlessStrategy(
+			{
+				secret: "somescsc",
+				callbackPath: "/custom",
+				codeField: "_code",
+				codeOptions: {
+					lettersOnly: true,
+					segmentLength: 4,
+					size: 8,
+				},
+				emailField: "_email",
+				expirationTime: 50,
+				linkTokenParam: "this_token",
+				sessionCodeKey: "sessCode",
+				sessionEmailKey: "sessEmail",
+				sessionLinkKey: "sessLink",
+				validateEmail: validateEmail,
+				sendEmail,
+				useOneTimeCode: true,
+			},
+			verify,
+		);
+		const formData = new URLSearchParams();
+		formData.set("_email", "somescsc@gmail.com");
+
+		const url = new URL(`/`, "http://localhost:3000");
+		const request1 = new Request(url, {
+			method: "POST",
+			body: formData,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
+		try {
+			await strategy.authenticate(request1, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/entry",
+				failureRedirect: "/other",
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			const headers = redirect.headers;
+
+			const sessionRes = await sessionStorage.getSession(
+				headers.get("Set-Cookie"),
+			);
+
+			expect(headers.get("Location")).toBe("/entry");
+			expect(headers.get("Set-Cookie")).not.toBeNull();
+
+			expect(sendEmail).toHaveBeenCalled();
+			expect(validateEmail).toHaveBeenCalledWith("somescsc@gmail.com");
+			expect(verify).toHaveBeenCalledWith(
+				expect.objectContaining({
+					email: "somescsc@gmail.com",
+					form: new FormData(),
+				}),
+			);
+
+			expect(sessionRes.get("sessLink")).toBeDefined();
+			expect(sessionRes.get("sessCode")).toBeDefined();
+			expect(sessionRes.get("sessCode").length).toBe(8 + 1);
+			expect((sessionRes.get("sessCode") as string).indexOf("-")).toBe(4);
+			expect((sessionRes.get("sessCode") as string).lastIndexOf("-")).toBe(4);
+			expect(sessionRes.get("user")).not.toBeDefined();
+		}
+
+		const nformData = new FormData();
+		nformData.set("_email", "somescsc@gmail.com");
+
+		const accessLink = strategy.buildAccessLink(
+			"somescsc@gmail.com",
+			"http://localhost:3000",
+			nformData,
+		);
+
+		session.set("sessLink", accessLink);
+		const request = await buildRequest(
+			session,
+			new URLSearchParams({
+				this_token: new URL(accessLink).searchParams.get("this_token") ?? "",
+			}),
+		);
+
+		const verifiedUser = await strategy.authenticate(request, sessionStorage, {
+			sessionKey: "user",
+			sessionErrorKey: "errorKey",
+		});
+
+		expect(sendEmail).toHaveBeenCalledOnce();
+		expect(verify).toHaveBeenCalledWith(
+			expect.objectContaining({
+				email: "somescsc@gmail.com",
+				form: nformData,
+			}),
+		);
+
+		expect(verifiedUser).equals(user);
 	});
 });
 
 /**
- * get request
- * post request
- *  with no success redirect
- *
- * send email was called (vi.fn())
- * verify was called (vi.fn())
- *
- * expiry
- * same browser check
- *
- * commit on return
- *
- * link only
- * code and link
- *  link verify
- *  code verify
  *  attempty count
- *  otp styles
  */

@@ -41,7 +41,7 @@ type BaseStrategyOptions<User> = {
 	sessionEmailKey?: string;
 	linkTokenParam?: string;
 	/**
-	 * The key on the session to store the magic link.
+	 * The key on the session to store the access link.
 	 * @default "auth:accessLink"
 	 */
 	sessionLinkKey?: string;
