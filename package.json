@@ -1,6 +1,6 @@
 {
 	"name": "remix-auth-passwordless",
-	"version": "0.0.22",
+	"version": "0.0.23",
 	"description": "Passwordless strategy for remix-auth",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
