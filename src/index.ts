@@ -164,12 +164,9 @@ class PasswordlessStrategy<User> extends Strategy<
 				return;
 			}
 			session.unset(this.internalOptions.sessionCodeKey);
-			session.unset(this.internalOptions.sessionLinkKey);
-			session.unset(this.internalOptions.sessionEmailKey);
-		} else {
-			session.unset(this.internalOptions.sessionLinkKey);
-			session.unset(this.internalOptions.sessionEmailKey);
 		}
+		session.unset(this.internalOptions.sessionLinkKey);
+		session.unset(this.internalOptions.sessionEmailKey);
 	}
 
 	private async handleGet(
