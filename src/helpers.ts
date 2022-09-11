@@ -3,7 +3,7 @@ import AES from "crypto-js/aes";
 import { DEFAULTS } from "./defaults";
 import type {
 	AuthErrorTypeMessages,
-	CodeOptions,
+	InternalOptions,
 	PasswordlessStrategyOptions,
 } from "./types";
 
@@ -47,11 +47,7 @@ function mergeErrorMessages(
 
 function mergeOptions<User>(
 	options: PasswordlessStrategyOptions<User>,
-): Required<PasswordlessStrategyOptions<User>> & {
-	errorMessages: Required<AuthErrorTypeMessages>;
-	codeOptions: Required<CodeOptions>;
-	codeCountKey: string;
-} {
+): InternalOptions<User> {
 	const shouldUseCode = options.useOneTimeCode;
 
 	return {

@@ -97,7 +97,14 @@ type PasswordlessStrategyVerifyParams = {
 	form: FormData;
 };
 
+type InternalOptions<User> = Required<PasswordlessStrategyOptions<User>> & {
+	errorMessages: Required<AuthErrorTypeMessages>;
+	codeOptions: Required<CodeOptions>;
+	codeCountKey: string;
+};
+
 export type {
+	InternalOptions,
 	CodeOptions,
 	PasswordlessStrategyVerifyParams,
 	PasswordlessStrategyOptions,

@@ -11,8 +11,7 @@ import {
 } from "./helpers";
 import { generateOtp } from "./otp";
 import type {
-	AuthErrorTypeMessages,
-	CodeOptions,
+	InternalOptions,
 	LinkPayload,
 	PasswordlessStrategyOptions,
 	PasswordlessStrategyVerifyParams,
@@ -25,13 +24,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	public name = "passwordless";
 
 	private _session?: Session;
-	private readonly internalOptions: Required<
-		PasswordlessStrategyOptions<User>
-	> & {
-		errorMessages: Required<AuthErrorTypeMessages>;
-		codeOptions: Required<CodeOptions>;
-		codeCountKey: string;
-	};
+	private readonly internalOptions: InternalOptions<User>;
 
 	constructor(
 		options: PasswordlessStrategyOptions<User>,
@@ -166,7 +159,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	private cleanSession(session: Session, failure: boolean) {
 		if (this.internalOptions.useOneTimeCode) {
 			const codeCount = session.get(this.internalOptions.codeCountKey) ?? 1;
-			if (failure && codeCount === this.internalOptions.invalidCodeAttempts) {
+			if (failure && codeCount <= this.internalOptions.invalidCodeAttempts) {
 				session.set(this.internalOptions.codeCountKey, codeCount + 1);
 				return;
 			}
