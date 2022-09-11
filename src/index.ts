@@ -34,7 +34,7 @@ class PasswordlessStrategy<User> extends Strategy<
 
 	constructor(
 		options: PasswordlessStrategyOptions<User>,
-		verify: StrategyVerifyCallback<User, PasswordlessStrategyVerifyParams>
+		verify: StrategyVerifyCallback<User, PasswordlessStrategyVerifyParams>,
 	) {
 		super(verify);
 		this.internalOptions = mergeOptions(options);
@@ -43,7 +43,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	public async authenticate(
 		request: Request,
 		sessionStorage: SessionStorage,
-		options: AuthenticateOptions
+		options: AuthenticateOptions,
 	): Promise<User> {
 		try {
 			if (request.method === "GET") {
@@ -68,7 +68,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	public buildAccessLink(
 		email: string,
 		domainUrl: string,
-		form: FormData
+		form: FormData,
 	): string {
 		const payload = {
 			email,
@@ -79,7 +79,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		url.pathname = this.internalOptions.callbackPath;
 		url.searchParams.set(
 			this.internalOptions.linkTokenParam,
-			encrypt(JSON.stringify(payload), this.internalOptions.secret)
+			encrypt(JSON.stringify(payload), this.internalOptions.secret),
 		);
 		return url.toString();
 	}
@@ -88,7 +88,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		user: User,
 		request: Request,
 		sessionStorage: SessionStorage,
-		options: AuthenticateOptions
+		options: AuthenticateOptions,
 	): Promise<User> {
 		let session = this._session;
 		if (!session) {
@@ -103,7 +103,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		message: string,
 		request: Request,
 		sessionStorage: SessionStorage,
-		options: AuthenticateOptions
+		options: AuthenticateOptions,
 	): Promise<never> {
 		if (!options.failureRedirect) {
 			if (options.throwOnError) {
@@ -123,11 +123,19 @@ class PasswordlessStrategy<User> extends Strategy<
 		});
 	}
 
+	private async readFormData(request: Request, options: AuthenticateOptions) {
+		if (options.context?.formData instanceof FormData) {
+			return options.context.formData;
+		}
+
+		return await request.formData();
+	}
+
 	private async onSuccess(
 		session: Session,
 		sessionStorage: SessionStorage,
 		options: AuthenticateOptions,
-		user?: User
+		user?: User,
 	): Promise<User> {
 		if (user) {
 			session.set(options.sessionKey, user);
@@ -141,7 +149,7 @@ class PasswordlessStrategy<User> extends Strategy<
 		} else {
 			if (!options.successRedirect) {
 				throw new Error(
-					"A success callback is required if not checking the code and making a POST request"
+					"A success callback is required if not checking the code and making a POST request",
 				);
 			}
 		}
@@ -163,14 +171,14 @@ class PasswordlessStrategy<User> extends Strategy<
 	private async handleGet(
 		request: Request,
 		sessionStorage: SessionStorage,
-		options: AuthenticateOptions
+		options: AuthenticateOptions,
 	) {
 		const session = await sessionStorage.getSession(
-			request.headers.get("Cookie")
+			request.headers.get("Cookie"),
 		);
 		this._session = session;
 		const sessionLink: unknown = session.get(
-			this.internalOptions.sessionLinkKey
+			this.internalOptions.sessionLinkKey,
 		);
 		const accessLink: string =
 			typeof sessionLink === "string" ? sessionLink : "";
@@ -183,14 +191,14 @@ class PasswordlessStrategy<User> extends Strategy<
 	private async handlePost(
 		request: Request,
 		sessionStorage: SessionStorage,
-		options: AuthenticateOptions
+		options: AuthenticateOptions,
 	) {
 		const session = await sessionStorage.getSession(
-			request.headers.get("Cookie")
+			request.headers.get("Cookie"),
 		);
 		this._session = session;
 
-		const formData = await request.formData();
+		const formData = await this.readFormData(request, options);
 
 		const submittedCode = this.internalOptions.useOneTimeCode
 			? formData.get(this.internalOptions.codeField)?.toString()
@@ -202,7 +210,7 @@ class PasswordlessStrategy<User> extends Strategy<
 				"Missing email address.",
 				request,
 				sessionStorage,
-				options
+				options,
 			);
 		}
 
@@ -212,7 +220,7 @@ class PasswordlessStrategy<User> extends Strategy<
 			this.validateCode(session, submittedCode);
 
 			const sessionLink: unknown = session.get(
-				this.internalOptions.sessionLinkKey
+				this.internalOptions.sessionLinkKey,
 			);
 			const sessionaccessLink: string =
 				typeof sessionLink === "string" ? sessionLink : "";
@@ -225,7 +233,7 @@ class PasswordlessStrategy<User> extends Strategy<
 			}
 			const { email, form: formRecord } = this.parseLinkPayload(
 				linkCode,
-				"code"
+				"code",
 			);
 			const form = buildFormData(formRecord);
 			const user = await this.verify({ email, form });
@@ -273,7 +281,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	private validateCode(session: Session, code: string) {
 		if (this.internalOptions.useOneTimeCode) {
 			const sessionCodeVal: unknown = session.get(
-				this.internalOptions.sessionCodeKey
+				this.internalOptions.sessionCodeKey,
 			);
 			const sessionCode =
 				typeof sessionCodeVal === "string" ? sessionCodeVal : "";
@@ -283,7 +291,7 @@ class PasswordlessStrategy<User> extends Strategy<
 			}
 		} else {
 			throw new Error(
-				"Attempting to validate code when not configured to do so."
+				"Attempting to validate code when not configured to do so.",
 			);
 		}
 	}

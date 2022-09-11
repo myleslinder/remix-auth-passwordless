@@ -1,6 +1,5 @@
 /// <reference types="@remix-run/node/globals" />
 import { createCookieSessionStorage, type Session } from "@remix-run/node";
-import { Authenticator } from "remix-auth";
 import { assert, beforeEach, describe, expect, test, vi } from "vitest";
 import { PasswordlessStrategy } from "../src/index";
 
@@ -11,7 +10,7 @@ const sessionStorage = createCookieSessionStorage({
 async function buildRequest(
 	session: Session,
 	params?: URLSearchParams,
-	method = "GET"
+	method = "GET",
 ) {
 	const url = new URL(`/?${params?.toString() ?? ""}`, "http://localhost:3000");
 	return new Request(url, {
@@ -40,8 +39,6 @@ describe(PasswordlessStrategy.name, () => {
 	};
 	const verify = vi.fn();
 
-	const authenticator = new Authenticator<User>(sessionStorage);
-
 	test("POST: should call the verify callback and not set user when producing access link", async () => {
 		const session = await sessionStorage.getSession();
 		verify.mockReturnValue(user);
@@ -51,7 +48,7 @@ describe(PasswordlessStrategy.name, () => {
 				secret: "somescsc",
 				sendEmail,
 			},
-			verify
+			verify,
 		);
 
 		const formData = new URLSearchParams({
@@ -79,7 +76,7 @@ describe(PasswordlessStrategy.name, () => {
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
 			const session = await sessionStorage.getSession(
-				headers.get("Set-Cookie")
+				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
 			expect(session.get("auth:accessLink")).toBeDefined();
@@ -90,7 +87,7 @@ describe(PasswordlessStrategy.name, () => {
 			expect.objectContaining({
 				email: user.email,
 				form: new FormData(),
-			})
+			}),
 		);
 	});
 	test("POST: should set code when requested producing access link", async () => {
@@ -103,7 +100,7 @@ describe(PasswordlessStrategy.name, () => {
 				sendEmail,
 				useOneTimeCode: true,
 			},
-			verify
+			verify,
 		);
 
 		const formData = new URLSearchParams({
@@ -131,7 +128,7 @@ describe(PasswordlessStrategy.name, () => {
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
 			const session = await sessionStorage.getSession(
-				headers.get("Set-Cookie")
+				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
 			expect(session.get("auth:accessLink")).toBeDefined();
@@ -143,7 +140,7 @@ describe(PasswordlessStrategy.name, () => {
 			expect.objectContaining({
 				email: user.email,
 				form: new FormData(),
-			})
+			}),
 		);
 	});
 
@@ -157,7 +154,7 @@ describe(PasswordlessStrategy.name, () => {
 				sendEmail,
 				useOneTimeCode: true,
 			},
-			verify
+			verify,
 		);
 
 		const formData1 = new URLSearchParams({
@@ -186,7 +183,7 @@ describe(PasswordlessStrategy.name, () => {
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
 			const session = await sessionStorage.getSession(
-				headers.get("Set-Cookie")
+				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
 			expect(session.get("auth:accessLink")).toBeDefined();
@@ -206,7 +203,7 @@ describe(PasswordlessStrategy.name, () => {
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData()
+			new FormData(),
 		);
 		session.set("auth:accessLink", accessLink);
 		const url = new URL(`/`, "http://localhost:3000");
@@ -231,7 +228,7 @@ describe(PasswordlessStrategy.name, () => {
 			const headers = redirect.headers;
 			expect(headers.get("Set-Cookie")).not.toBeNull();
 			const session = await sessionStorage.getSession(
-				headers.get("Set-Cookie")
+				headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/inside");
 			expect(session.get("auth:accessLink")).not.toBeDefined();
@@ -242,7 +239,7 @@ describe(PasswordlessStrategy.name, () => {
 			expect.objectContaining({
 				email: user.email,
 				form: new FormData(),
-			})
+			}),
 		);
 	});
 
@@ -254,13 +251,13 @@ describe(PasswordlessStrategy.name, () => {
 				secret: "somescsc",
 				sendEmail,
 			},
-			verify
+			verify,
 		);
 
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData()
+			new FormData(),
 		);
 
 		session.set("auth:accessLink", accessLink);
@@ -268,7 +265,7 @@ describe(PasswordlessStrategy.name, () => {
 			session,
 			new URLSearchParams({
 				token: new URL(accessLink).searchParams.get("token") ?? "",
-			})
+			}),
 		);
 
 		try {
@@ -281,7 +278,7 @@ describe(PasswordlessStrategy.name, () => {
 			assert(redirect instanceof Response);
 			const headers = redirect.headers;
 			const session = await sessionStorage.getSession(
-				redirect.headers.get("Set-Cookie")
+				redirect.headers.get("Set-Cookie"),
 			);
 			expect(headers.get("Location")).toBe("/entry");
 			expect(headers.get("Set-Cookie")).not.toBeNull();
@@ -292,7 +289,7 @@ describe(PasswordlessStrategy.name, () => {
 			expect.objectContaining({
 				email: user.email,
 				form: new FormData(),
-			})
+			}),
 		);
 	});
 	test("GET: should error if no access link token on request url", async () => {
@@ -306,13 +303,13 @@ describe(PasswordlessStrategy.name, () => {
 					default: defaultErr,
 				},
 			},
-			verify
+			verify,
 		);
 
 		const accessLink = strategy.buildAccessLink(
 			user.email,
 			"http://localhost:3000",
-			new FormData()
+			new FormData(),
 		);
 
 		session.set("auth:accessLink", accessLink);
@@ -329,7 +326,7 @@ describe(PasswordlessStrategy.name, () => {
 			assert(response instanceof Response);
 			const headers = response.headers;
 			const session = await sessionStorage.getSession(
-				headers.get("Set-Cookie")
+				headers.get("Set-Cookie"),
 			);
 			const error = session.get("errorKey") as { message: string };
 			assert(typeof error === "object" && error !== null && "message" in error);
@@ -352,18 +349,122 @@ describe(PasswordlessStrategy.name, () => {
 		}
 	});
 
-	test.skip("it should return the user as result", async () => {
-		verify.mockReturnValue(user);
-		const session = await sessionStorage.getSession();
-		session.set(authenticator.sessionKey, user);
+	test("should prefer context.formData over request.formData()", async () => {
+		const body = new FormData();
+		body.set("email", "test@example.com");
 
-		const request = await buildRequest(session);
-		const strategy = new PasswordlessStrategy<User>(
+		const context = { formData: body };
+		const session = await sessionStorage.getSession();
+		const sendEmail = vi.fn();
+		const strategy = new PasswordlessStrategy(
 			{
 				secret: "somescsc",
-				sendEmail: vi.fn(),
+				sendEmail,
 			},
-			verify
+			verify,
+		);
+
+		const accessLink = strategy.buildAccessLink(
+			user.email,
+			"http://localhost:3000",
+			new FormData(),
+		);
+
+		session.set("auth:accessLink", accessLink);
+		const request = await buildRequest(
+			session,
+			new URLSearchParams({
+				token: new URL(accessLink).searchParams.get("token") ?? "",
+			}),
+		);
+		try {
+			await strategy.authenticate(request, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/entry",
+				context,
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			expect(verify).toHaveBeenCalledWith(
+				expect.objectContaining({
+					email: body.get("email"),
+					form: body,
+				}),
+			);
+		}
+	});
+
+	test("ignore context.formData if it's not an FormData object", async () => {
+		const body = new FormData();
+		body.set("email", "test@example.com");
+
+		const context = { formData: { email: "fake@example.com" } };
+		const session = await sessionStorage.getSession();
+		const sendEmail = vi.fn();
+		const strategy = new PasswordlessStrategy(
+			{
+				secret: "somescsc",
+				sendEmail,
+			},
+			verify,
+		);
+
+		const accessLink = strategy.buildAccessLink(
+			user.email,
+			"http://localhost:3000",
+			new FormData(),
+		);
+
+		session.set("auth:accessLink", accessLink);
+		const request = await buildRequest(
+			session,
+			new URLSearchParams({
+				token: new URL(accessLink).searchParams.get("token") ?? "",
+			}),
+		);
+		try {
+			await strategy.authenticate(request, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/entry",
+				context,
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			expect(verify).toHaveBeenCalledWith(
+				expect.objectContaining({
+					email: "test@example.com",
+					form: body,
+				}),
+			);
+		}
+	});
+
+	test("it should return the user as result", async () => {
+		verify.mockReturnValue(user);
+		const session = await sessionStorage.getSession();
+		const sendEmail = vi.fn();
+		const strategy = new PasswordlessStrategy(
+			{
+				secret: "somescsc",
+				sendEmail,
+			},
+			verify,
+		);
+
+		const accessLink = strategy.buildAccessLink(
+			user.email,
+			"http://localhost:3000",
+			new FormData(),
+		);
+
+		session.set("auth:accessLink", accessLink);
+		const request = await buildRequest(
+			session,
+			new URLSearchParams({
+				token: new URL(accessLink).searchParams.get("token") ?? "",
+			}),
 		);
 
 		const verifiedUser = await strategy.authenticate(request, sessionStorage, {
@@ -371,7 +472,15 @@ describe(PasswordlessStrategy.name, () => {
 			sessionErrorKey: "errorKey",
 		});
 
-		await expect(verifiedUser).resolves.toEqual(user);
+		expect(sendEmail).not.toHaveBeenCalled();
+		expect(verify).toHaveBeenCalledWith(
+			expect.objectContaining({
+				email: user.email,
+				form: new FormData(),
+			}),
+		);
+
+		await expect(verifiedUser).equals(user);
 	});
 });
 
