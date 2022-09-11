@@ -30,6 +30,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	> & {
 		errorMessages: Required<AuthErrorTypeMessages>;
 		codeOptions: Required<CodeOptions>;
+		codeCountKey: string;
 	};
 
 	constructor(
@@ -96,7 +97,7 @@ class PasswordlessStrategy<User> extends Strategy<
 			session = await sessionStorage.getSession(request.headers.get("Cookie"));
 		}
 
-		this.cleanSession(session);
+		this.cleanSession(session, false);
 		return this.onSuccess(session, sessionStorage, options, user);
 	}
 
@@ -116,7 +117,9 @@ class PasswordlessStrategy<User> extends Strategy<
 		if (!session) {
 			session = await sessionStorage.getSession(request.headers.get("Cookie"));
 		}
-		this.cleanSession(session);
+
+		this.cleanSession(session, true);
+
 		session.unset(options.sessionKey);
 		session.flash(options.sessionErrorKey, { message });
 		throw redirect(options.failureRedirect, {
@@ -160,12 +163,19 @@ class PasswordlessStrategy<User> extends Strategy<
 		});
 	}
 
-	private cleanSession(session: Session) {
-		session.unset(this.internalOptions.sessionLinkKey);
-		session.unset(this.internalOptions.sessionEmailKey);
-
+	private cleanSession(session: Session, failure: boolean) {
 		if (this.internalOptions.useOneTimeCode) {
+			const codeCount = session.get(this.internalOptions.codeCountKey) ?? 1;
+			if (failure && codeCount === this.internalOptions.invalidCodeAttempts) {
+				session.set(this.internalOptions.codeCountKey, codeCount + 1);
+				return;
+			}
 			session.unset(this.internalOptions.sessionCodeKey);
+			session.unset(this.internalOptions.sessionLinkKey);
+			session.unset(this.internalOptions.sessionEmailKey);
+		} else {
+			session.unset(this.internalOptions.sessionLinkKey);
+			session.unset(this.internalOptions.sessionEmailKey);
 		}
 	}
 

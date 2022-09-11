@@ -248,6 +248,156 @@ describe(PasswordlessStrategy.name, () => {
 			}),
 		);
 	});
+	test("POST: should use invalid code attemps", async () => {
+		const session = await sessionStorage.getSession();
+		verify.mockReturnValue(user);
+		const sendEmail = vi.fn();
+		const strategy = new PasswordlessStrategy(
+			{
+				secret: "somescsc",
+				sendEmail,
+				useOneTimeCode: true,
+				invalidCodeAttempts: 2,
+			},
+			verify,
+		);
+
+		const formData1 = new URLSearchParams({
+			email: user.email,
+		});
+		const url1 = new URL(`/`, "http://localhost:3000");
+		const request1 = new Request(url1, {
+			method: "POST",
+			body: formData1,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
+
+		let code = "";
+		try {
+			await strategy.authenticate(request1, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/entry",
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			const headers = redirect.headers;
+			expect(headers.get("Set-Cookie")).not.toBeNull();
+			const resSession = await sessionStorage.getSession(
+				headers.get("Set-Cookie"),
+			);
+			expect(headers.get("Location")).toBe("/entry");
+			expect(resSession.get(DEFAULTS.sessionLinkKey)).toBeDefined();
+			expect(resSession.get(DEFAULTS.sessionCodeKey)).toBeDefined();
+			expect(resSession.get(DEFAULTS.sessionEmailKey)).toBe(user.email);
+			const _code: unknown = resSession.get(DEFAULTS.sessionCodeKey);
+			assert(typeof _code === "string");
+			code = _code;
+			expect(resSession.get("user")).not.toBeDefined();
+		}
+		expect(sendEmail).toHaveBeenCalledOnce();
+
+		session.set(DEFAULTS.sessionCodeKey, code);
+		session.set(DEFAULTS.sessionEmailKey, user.email);
+		const formData = new URLSearchParams({
+			// email: user.email,
+			code: "wrongcode",
+		});
+		const fd = new FormData();
+		fd.set("email", user.email);
+		const accessLink = strategy.buildAccessLink(
+			user.email,
+			"http://localhost:3000",
+			fd,
+		);
+
+		session.set(DEFAULTS.sessionLinkKey, accessLink);
+		const url = new URL(`/`, "http://localhost:3000");
+		const request = new Request(url, {
+			method: "POST",
+			body: formData,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
+
+		try {
+			await strategy.authenticate(request, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/inside",
+				failureRedirect: "/outside",
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			const headers = redirect.headers;
+			expect(headers.get("Set-Cookie")).not.toBeNull();
+			const sessionRes = await sessionStorage.getSession(
+				headers.get("Set-Cookie"),
+			);
+			expect(headers.get("Location")).toBe("/outside");
+			expect(sessionRes.get(DEFAULTS.sessionLinkKey)).toBeDefined();
+			expect(sessionRes.get(DEFAULTS.sessionCodeKey)).toBeDefined();
+			expect(sessionRes.get("auth:code_count")).toBe(2);
+			expect(sessionRes.get("user")).not.toBeDefined();
+		}
+		expect(verify).toHaveBeenCalledWith(
+			expect.objectContaining({
+				email: user.email,
+				form: new FormData(),
+			}),
+		);
+		const formData2 = new URLSearchParams({
+			// email: user.email,
+			code: "anotherwonrg",
+		});
+		const fd2 = new FormData();
+		fd2.set("email", user.email);
+		const accessLink2 = strategy.buildAccessLink(
+			user.email,
+			"http://localhost:3000",
+			fd2,
+		);
+
+		session.set(DEFAULTS.sessionLinkKey, accessLink2);
+		session.set("auth:code_count", 2);
+		const url2 = new URL(`/`, "http://localhost:3000");
+		const request2 = new Request(url2, {
+			method: "POST",
+			body: formData2,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
+
+		try {
+			await strategy.authenticate(request2, sessionStorage, {
+				sessionKey: "user",
+				sessionErrorKey: "errorKey",
+				successRedirect: "/inside",
+				failureRedirect: "/outside",
+			});
+		} catch (redirect) {
+			assert(redirect instanceof Response);
+			const headers = redirect.headers;
+			expect(headers.get("Set-Cookie")).not.toBeNull();
+			const session = await sessionStorage.getSession(
+				headers.get("Set-Cookie"),
+			);
+			expect(headers.get("Location")).toBe("/outside");
+			expect(session.get(DEFAULTS.sessionLinkKey)).not.toBeDefined();
+			expect(session.get(DEFAULTS.sessionCodeKey)).not.toBeDefined();
+			expect(session.get("user")).not.toBeDefined();
+		}
+	});
 
 	test("GET: should call the verify callback and set user when successfully verify access link", async () => {
 		const session = await sessionStorage.getSession();

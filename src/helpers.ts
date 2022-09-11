@@ -24,7 +24,7 @@ function decrypt(value: string, secret: string): string {
 }
 
 function mergeErrorMessages(
-	errorMessages?: Partial<AuthErrorTypeMessages>
+	errorMessages?: Partial<AuthErrorTypeMessages>,
 ): Required<AuthErrorTypeMessages> {
 	return {
 		default: errorMessages?.default ?? DEFAULTS.errorMessages.default,
@@ -46,10 +46,11 @@ function mergeErrorMessages(
 }
 
 function mergeOptions<User>(
-	options: PasswordlessStrategyOptions<User>
+	options: PasswordlessStrategyOptions<User>,
 ): Required<PasswordlessStrategyOptions<User>> & {
 	errorMessages: Required<AuthErrorTypeMessages>;
 	codeOptions: Required<CodeOptions>;
+	codeCountKey: string;
 } {
 	const shouldUseCode = options.useOneTimeCode;
 
@@ -84,6 +85,7 @@ function mergeOptions<User>(
 			: DEFAULTS.codeOptions,
 		sendEmail: shouldUseCode ? options.sendEmail : options.sendEmail,
 		invalidCodeAttempts: 1,
+		codeCountKey: "auth:code_count",
 		// verifierApiKey: options.verifierApiKey ?? "",
 	};
 }
