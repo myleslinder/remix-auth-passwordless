@@ -3,6 +3,7 @@
 > This is sort of a fork of [`remix-auth-email-link`][remix-auth-email-link] but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow][kcd-blog-post].
 
 > **Warning**
+>
 > You probably want to use [`remix-auth-email-link`][remix-auth-email-link]
 
 Passwordless strategy for [remix-auth][remix-auth]. You can use this strategy for email based passwordless authentication with a access link and optionally a one time access code.

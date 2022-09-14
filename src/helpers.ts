@@ -1,5 +1,5 @@
-import { enc } from "crypto-js";
 import AES from "crypto-js/aes";
+import utf8 from "crypto-js/enc-utf8";
 import { DEFAULTS } from "./defaults";
 import type {
 	AuthErrorTypeMessages,
@@ -20,7 +20,7 @@ function encrypt(value: string, secret: string): string {
 
 function decrypt(value: string, secret: string): string {
 	const bytes = AES.decrypt(value, secret);
-	return bytes.toString(enc.Utf8);
+	return bytes.toString(utf8);
 }
 
 function mergeErrorMessages(

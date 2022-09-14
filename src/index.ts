@@ -136,7 +136,7 @@ class PasswordlessStrategy<User> extends Strategy<
 	): Promise<User> {
 		if (user) {
 			session.set(options.sessionKey, user);
-			session.set(options.sessionStrategyKey, this.name);
+			session.set(options.sessionStrategyKey, options.name);
 			if (!options.successRedirect) {
 				if (this.internalOptions.commitOnReturn) {
 					await sessionStorage.commitSession(session);
