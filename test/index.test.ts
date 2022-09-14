@@ -70,6 +70,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (redirect) {
@@ -122,6 +123,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (redirect) {
@@ -177,6 +179,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request1, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (redirect) {
@@ -227,6 +230,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
 			});
 		} catch (redirect) {
@@ -281,6 +285,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request1, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (redirect) {
@@ -331,6 +336,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
 				failureRedirect: "/outside",
 			});
@@ -382,6 +388,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request2, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
 				failureRedirect: "/outside",
 			});
@@ -433,6 +440,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (redirect) {
@@ -473,6 +481,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				failureRedirect: "/entry",
 			});
@@ -492,6 +501,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(newR, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 			});
 		} catch (response) {
@@ -518,23 +528,23 @@ describe(PasswordlessStrategy.name, () => {
 			verify,
 		);
 
-		const accessLink = strategy.buildAccessLink(
-			user.email,
-			"http://localhost:3000",
-			body,
-		);
-
-		session.set(DEFAULTS.sessionLinkKey, accessLink);
-		const request = await buildRequest(
-			session,
-			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
-			}),
-		);
+		const url = new URL("/", "http://localhost:3000");
+		const formData = new URLSearchParams();
+		formData.set("_email", "somescsc@gmail.com");
+		const request = new Request(url, {
+			method: "POST",
+			body: formData,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
 		try {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				context,
 			});
@@ -550,9 +560,6 @@ describe(PasswordlessStrategy.name, () => {
 	});
 
 	test("ignore context.formData if it's not an FormData object", async () => {
-		const body = new FormData();
-		body.set("email", "test@example.com");
-
 		const context = { formData: { email: "fake@example.com" } };
 		const session = await sessionStorage.getSession();
 		const sendEmail = vi.fn();
@@ -564,23 +571,23 @@ describe(PasswordlessStrategy.name, () => {
 			verify,
 		);
 
-		const accessLink = strategy.buildAccessLink(
-			user.email,
-			"http://localhost:3000",
-			body,
-		);
-
-		session.set(DEFAULTS.sessionLinkKey, accessLink);
-		const request = await buildRequest(
-			session,
-			new URLSearchParams({
-				token: new URL(accessLink).searchParams.get(DEFAULTS.tokenParam) ?? "",
-			}),
-		);
+		const url = new URL("/", "http://localhost:3000");
+		const formData = new URLSearchParams();
+		formData.set("email", "somescsc@gmail.com");
+		const request = new Request(url, {
+			method: "POST",
+			body: formData,
+			headers: {
+				Cookie: await sessionStorage.commitSession(session),
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Forwarded-Host": "http://localhost:3000",
+			},
+		});
 		try {
 			await strategy.authenticate(request, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				context,
 			});
@@ -588,8 +595,8 @@ describe(PasswordlessStrategy.name, () => {
 			assert(redirect instanceof Response);
 			expect(verify).toHaveBeenCalledWith(
 				expect.objectContaining({
-					email: "test@example.com",
-					form: body,
+					email: "somescsc@gmail.com",
+					form: new FormData(),
 				}),
 			);
 		}
@@ -626,6 +633,7 @@ describe(PasswordlessStrategy.name, () => {
 		const verifiedUser = await strategy.authenticate(request, sessionStorage, {
 			sessionKey: "user",
 			sessionErrorKey: "errorKey",
+			sessionStrategyKey: "strategy",
 		});
 
 		expect(sendEmail).not.toHaveBeenCalled();
@@ -682,6 +690,7 @@ describe(PasswordlessStrategy.name, () => {
 			await strategy.authenticate(request1, sessionStorage, {
 				sessionKey: "user",
 				sessionErrorKey: "errorKey",
+				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				failureRedirect: "/other",
 			});
@@ -733,6 +742,7 @@ describe(PasswordlessStrategy.name, () => {
 		const verifiedUser = await strategy.authenticate(request, sessionStorage, {
 			sessionKey: "user",
 			sessionErrorKey: "errorKey",
+			sessionStrategyKey: "strategy",
 		});
 
 		expect(sendEmail).toHaveBeenCalledOnce();

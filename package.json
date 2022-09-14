@@ -25,6 +25,7 @@
 		"format": "prettier --write .",
 		"lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
 		"test": "vitest",
+		"coverage": "vitest run --coverage",
 		"typecheck": "tsc -b",
 		"update:check": "pnpm dlx taze",
 		"prepublishOnly": "pnpm run build"
@@ -50,6 +51,7 @@
 		"@types/node": "^18.7.16",
 		"@typescript-eslint/eslint-plugin": "^5.8.1",
 		"@typescript-eslint/parser": "^5.8.1",
+		"@vitest/coverage-c8": "^0.23.2",
 		"eslint": "^8.5.0",
 		"eslint-config-prettier": "^8.5.0",
 		"prettier": "2.7.1",

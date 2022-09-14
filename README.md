@@ -1,11 +1,11 @@
-# Remix Auth Passwordless Strategy &nbsp;![](https://img.shields.io/npm/v/remix-auth-passwordless.svg)
+# Remix Auth Passwordless Strategy &nbsp;[![package-badge]][package] &nbsp;[![size-badge]][bundlephobia]
 
-> This is sort of a fork of [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link) but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow](https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-access-links).
+> This is sort of a fork of [`remix-auth-email-link`][remix-auth-email-link] but with changes to suit my preferences and to support one time codes. That repo was based on the [kcd auth flow][kcd-blog-post].
 
 > **Warning**
-> You probably want to use [`remix-auth-email-link`](https://github.com/pbteja1998/remix-auth-email-link)
+> You probably want to use [`remix-auth-email-link`][remix-auth-email-link]
 
-Passwordless strategy for [remix-auth](https://github.com/sergiodxa/remix-auth/). You can use this strategy for email based passwordless authentication with a access link and optionally a one time access code.
+Passwordless strategy for [remix-auth][remix-auth]. You can use this strategy for email based passwordless authentication with a access link and optionally a one time access code.
 
 It doesn't currently support SMS or sending one time codes without an access link.
 
@@ -86,7 +86,7 @@ The default expiry is set to 5 minutes and there is no options to disable the sa
 
 ### One Time Code Generation
 
-This strategy uses [`nanoid`](https://github.com/ai/nanoid/) to generate the one time codes.
+This strategy uses [`nanoid`][nanoid] to generate the one time codes.
 
 The generated code is split into segments separated by a `-`, like so: `abc1-2def-x3yz`. In the options you can customize the code length, segment length, and if you want to use only lowercase letters (no numbers). The shortest one time code that is supported is 4 characters.
 
@@ -96,7 +96,7 @@ By default if the user enters an invalid code then they will have to resend anot
 
 You cannot kick off the access flow without providing the`successRedirect` option. If you omit the value the strategy will throw an error. Additionally, if you provide a `successRedirect` that is a "protected" page in that it requres a user to be authenticated it wont work because there will be no user set in the session.
 
-In every other case (e.g. in the link callback or when providing an entered one time code) you can omit the value and it will behave as documented in the [advanced usage section of the remix auth docs](https://github.com/sergiodxa/remix-auth#advanced-usage). However, if you do not pass the `successRedirect` option to the `authenticate` method it will return the user data and you are responsible for setting the user data in the session, committing the session, and (likely) including the headers in the redirect. With this strategy if you do not provide the `successRedirect` the `sessionLinkKey`, `sessionEmailKey`, and `sessionCodeKey` will not be unset and you likely want to unset them.
+In every other case (e.g. in the link callback or when providing an entered one time code) you can omit the value and it will behave as documented in the [advanced usage section of the remix auth docs][remix-auth-advanced]. However, if you do not pass the `successRedirect` option to the `authenticate` method it will return the user data and you are responsible for setting the user data in the session, committing the session, and (likely) including the headers in the redirect. With this strategy if you do not provide the `successRedirect` the `sessionLinkKey`, `sessionEmailKey`, and `sessionCodeKey` will not be unset and you likely want to unset them.
 
 Alternatively, **if you don't use cookie session storage** you can use the `commitOnReturn` option to have the changes to the session (setting the user and unsetting the link, email, and code keys) be committed before returning the user data. In this case as the cookie only contains an id if you don't need any other changes to the session you don't need to manually get the session, commit, create headers, or provide them to the redirect.
 
@@ -236,3 +236,13 @@ export const action: ActionFunction = async ({ request }) => {
 ## License
 
 MIT
+
+[package]: https://www.npmjs.com/package/remix-auth-passwordless
+[package-badge]: https://img.shields.io/npm/v/remix-auth-passwordless.svg
+[size-badge]: https://img.shields.io/bundlephobia/minzip/remix-auth-passwordless@^0.0.24
+[bundlephobia]: https://bundlephobia.com/package/remix-auth-passwordless@^0.0.24
+[remix-auth-email-link]: https://github.com/pbteja1998/remix-auth-email-link
+[kcd-blog-post]: https://kentcdodds.com/blog/how-i-built-a-modern-website-in-2021#authentication-with-access-links
+[remix-auth]: https://github.com/sergiodxa/remix-auth/
+[nanoid]: https://github.com/ai/nanoid/
+[remix-auth-advanced]: https://github.com/sergiodxa/remix-auth#advanced-usage
