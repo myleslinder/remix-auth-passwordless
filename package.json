@@ -1,18 +1,19 @@
 {
 	"name": "remix-auth-passwordless",
-	"version": "0.0.24",
+	"version": "0.0.25",
 	"description": "Passwordless strategy for remix-auth",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"files": [
-		"dist"
-	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"require": "./dist/index.js"
+			"require": "./dist/index.js",
+			"import": "./dist/index.mjs"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"packageManager": "pnpm@7.11.0",
 	"repository": {
 		"type": "git",
@@ -36,7 +37,11 @@
 		],
 		"dts": true,
 		"splitting": false,
-		"sourcemap": false
+		"sourcemap": false,
+		"format": [
+			"esm",
+			"cjs"
+		]
 	},
 	"dependencies": {
 		"crypto-js": "^4.1.1",
