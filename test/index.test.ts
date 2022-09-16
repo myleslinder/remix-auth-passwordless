@@ -72,6 +72,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: "passwordless",
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -125,6 +126,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: "passwordless",
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -181,6 +183,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: "passwordless",
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -232,6 +235,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -287,6 +291,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -339,6 +344,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
 				failureRedirect: "/outside",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -391,6 +397,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionStrategyKey: "strategy",
 				successRedirect: "/inside",
 				failureRedirect: "/outside",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -442,6 +449,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -484,6 +492,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				failureRedirect: "/entry",
+				name: strategy.name,
 			});
 		} catch (response) {
 			assert(response instanceof Response);
@@ -503,6 +512,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: strategy.name,
 			});
 		} catch (response) {
 			assert(response instanceof Response);
@@ -546,6 +556,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: strategy.name,
 				context,
 			});
 		} catch (redirect) {
@@ -589,6 +600,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionErrorKey: "errorKey",
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
+				name: strategy.name,
 				context,
 			});
 		} catch (redirect) {
@@ -634,6 +646,7 @@ describe(PasswordlessStrategy.name, () => {
 			sessionKey: "user",
 			sessionErrorKey: "errorKey",
 			sessionStrategyKey: "strategy",
+			name: strategy.name,
 		});
 
 		expect(sendEmail).not.toHaveBeenCalled();
@@ -693,6 +706,7 @@ describe(PasswordlessStrategy.name, () => {
 				sessionStrategyKey: "strategy",
 				successRedirect: "/entry",
 				failureRedirect: "/other",
+				name: strategy.name,
 			});
 		} catch (redirect) {
 			assert(redirect instanceof Response);
@@ -743,6 +757,7 @@ describe(PasswordlessStrategy.name, () => {
 			sessionKey: "user",
 			sessionErrorKey: "errorKey",
 			sessionStrategyKey: "strategy",
+			name: "passwordless",
 		});
 
 		expect(sendEmail).toHaveBeenCalledOnce();
