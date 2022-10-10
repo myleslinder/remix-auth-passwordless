@@ -356,7 +356,7 @@ describe(PasswordlessStrategy.name, () => {
 			expect(headers.get("Location")).toBe("/outside");
 			expect(sessionRes.get(DEFAULTS.sessionLinkKey)).toBeDefined();
 			expect(sessionRes.get(DEFAULTS.sessionCodeKey)).toBeDefined();
-			expect(sessionRes.get("auth:code_count")).toBe(2);
+			expect(sessionRes.get(DEFAULTS.codeAttemptKey)).toBe(2);
 			expect(sessionRes.get("user")).not.toBeDefined();
 		}
 		expect(verify).toHaveBeenCalledWith(
@@ -378,7 +378,7 @@ describe(PasswordlessStrategy.name, () => {
 		);
 
 		session.set(DEFAULTS.sessionLinkKey, accessLink2);
-		session.set("auth:code_count", 2);
+		session.set(DEFAULTS.codeAttemptKey, 2);
 		const url2 = new URL(`/`, "http://localhost:3000");
 		const request2 = new Request(url2, {
 			method: "POST",

@@ -81,7 +81,7 @@ function mergeOptions<User>(
 			: DEFAULTS.codeOptions,
 		sendEmail: shouldUseCode ? options.sendEmail : options.sendEmail,
 		invalidCodeAttempts: 1,
-		codeCountKey: "auth:code_count",
+		codeCountKey: DEFAULTS.codeAttemptKey,
 		// verifierApiKey: options.verifierApiKey ?? "",
 	};
 }

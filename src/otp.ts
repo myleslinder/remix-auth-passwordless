@@ -1,4 +1,4 @@
-import { customAlphabet } from "nanoid/async";
+import { customAlphabet } from "nanoid";
 import type { CodeOptions } from "./types";
 
 const lowercase = "abcdefghijklmnopqrstuvwxyz";

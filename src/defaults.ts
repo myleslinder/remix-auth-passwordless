@@ -11,6 +11,7 @@ const SESSION_CODE_KEY = "auth:code";
 const SESSION_LINK_KEY = "auth:accessLink";
 const SESSION_EMAIL_KEY = "auth:email";
 const CODE_FIELD = "code";
+const CODE_ATTEMPT_KEY = "auth:code_attempt_count";
 const EMAIL_FIELD = "email";
 const CB_URL = "/auth";
 const TOKEN_PARAM = "token";
@@ -23,8 +24,8 @@ const DEFAULT_ERROR_MESSAGES: Required<AuthErrorTypeMessages> = {
 		mismatch: `You're trying to log into a browser that was not used to initiate the login`,
 	},
 	code: {
-		expired: "Code has expired. Please request a new one.",
-		invalid: "Code is invalid. Please try again or request a new one.",
+		expired: "Verification code expired. Please request a new one.",
+		invalid: "Invalid verification code. Please try again.",
 	},
 };
 
@@ -47,4 +48,5 @@ export const DEFAULTS = {
 	sessionLinkKey: SESSION_LINK_KEY,
 	sessionEmailKey: SESSION_EMAIL_KEY,
 	tokenParam: TOKEN_PARAM,
+	codeAttemptKey: CODE_ATTEMPT_KEY,
 };
